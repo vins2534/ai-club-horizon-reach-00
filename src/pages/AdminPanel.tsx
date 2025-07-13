@@ -6,9 +6,21 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Plus, Edit, Trash2, Calendar, Book, Image, Link, FolderOpen, Lightbulb } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useEvents } from '@/hooks/useEvents';
+import { useSymbitech } from '@/hooks/useSymbitech';
+import { useMediaPosts } from '@/hooks/useMediaPosts';
+import { useBlogs } from '@/hooks/useBlogs';
+import { useResources } from '@/hooks/useResources';
+import { useProjects } from '@/hooks/useProjects';
 
 const AdminPanel = () => {
   const { isAdminLoggedIn } = useAdmin();
+  const { events, isLoading: eventsLoading, deleteEvent } = useEvents();
+  const { sessions, isLoading: sessionsLoading, deleteSession } = useSymbitech();
+  const { mediaPosts, isLoading: mediaLoading, deleteMediaPost } = useMediaPosts();
+  const { blogs, isLoading: blogsLoading, deleteBlog } = useBlogs();
+  const { resources, isLoading: resourcesLoading, deleteResource } = useResources();
+  const { projects, isLoading: projectsLoading, deleteProject } = useProjects();
 
   if (!isAdminLoggedIn) {
     return (
@@ -21,41 +33,12 @@ const AdminPanel = () => {
     );
   }
 
-  // Mock data for demonstration
-  const mockEvents = [
-    { id: '1', title: 'AI Workshop 2024', date: '2024-01-15', img: 'https://example.com/image1.jpg' },
-    { id: '2', title: 'Machine Learning Bootcamp', date: '2024-02-20', img: 'https://example.com/image2.jpg' },
-  ];
-
-  const mockSymbitech = [
-    { id: '1', session: 'Introduction to Neural Networks', speaker: 'Dr. Smith', img: 'https://example.com/neural.jpg' },
-    { id: '2', session: 'Deep Learning Fundamentals', speaker: 'Prof. Johnson', img: 'https://example.com/deep.jpg' },
-  ];
-
-  const mockMediaPosts = [
-    { id: '1', title: 'Intro to GANs', subtitle: 'Infographic' },
-    { id: '2', title: 'What is NLP?', subtitle: 'Quick Guide' },
-  ];
-
-  const mockBlogs = [
-    { id: '1', quote: 'AI won\'t replace you, but a person using AI might.', author: 'Sara S, AI Club', link: 'https://medium.com/' },
-    { id: '2', quote: 'Prompt engineering is the new superpower.', author: 'Shivam B, Club Writer', link: 'https://medium.com/' },
-  ];
-
-  const mockResources = [
-    { id: '1', title: 'TensorFlow Guide', description: 'Complete guide to TensorFlow', img: 'https://example.com/tf.jpg', link: 'https://tensorflow.org' },
-    { id: '2', title: 'PyTorch Tutorial', description: 'Learn PyTorch from scratch', img: 'https://example.com/pytorch.jpg', link: 'https://pytorch.org' },
-  ];
-
-  const mockProjects = [
-    { id: '1', project: 'Generative Art App', img: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=400&q=80' },
-    { id: '2', project: 'NLP Chatbot', img: 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?auto=format&fit=crop&w=400&q=80' },
-  ];
-
   const renderCRUDTable = (
     data: any[],
     columns: { key: string; label: string }[],
-    entityName: string
+    entityName: string,
+    isLoading: boolean,
+    onDelete: (id: string) => void
   ) => (
     <Card>
       <CardHeader>
@@ -71,45 +54,62 @@ const AdminPanel = () => {
         </div>
       </CardHeader>
       <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              {columns.map((column) => (
-                <TableHead key={column.key}>{column.label}</TableHead>
-              ))}
-              <TableHead>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {data.map((item) => (
-              <TableRow key={item.id}>
+        {isLoading ? (
+          <div className="text-center py-8">Loading...</div>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
                 {columns.map((column) => (
-                  <TableCell key={column.key}>
-                    {column.key === 'img' && item[column.key] ? (
-                      <img src={item[column.key]} alt="Preview" className="w-12 h-8 object-cover rounded" />
-                    ) : column.key === 'link' && item[column.key] ? (
-                      <a href={item[column.key]} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
-                        View Link
-                      </a>
-                    ) : (
-                      String(item[column.key] || '').substring(0, 50) + (String(item[column.key] || '').length > 50 ? '...' : '')
-                    )}
-                  </TableCell>
+                  <TableHead key={column.key}>{column.label}</TableHead>
                 ))}
-                <TableCell>
-                  <div className="flex space-x-2">
-                    <Button variant="outline" size="sm">
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button variant="outline" size="sm">
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </TableCell>
+                <TableHead>Actions</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {data.map((item) => (
+                <TableRow key={item.id}>
+                  {columns.map((column) => (
+                    <TableCell key={column.key}>
+                      {column.key === 'img' && item[column.key] ? (
+                        <img src={item[column.key]} alt="Preview" className="w-12 h-8 object-cover rounded" />
+                      ) : column.key === 'link' && item[column.key] ? (
+                        <a href={item[column.key]} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+                          View Link
+                        </a>
+                      ) : column.key === 'date' && item[column.key] ? (
+                        new Date(item[column.key]).toLocaleDateString()
+                      ) : (
+                        String(item[column.key] || '').substring(0, 50) + (String(item[column.key] || '').length > 50 ? '...' : '')
+                      )}
+                    </TableCell>
+                  ))}
+                  <TableCell>
+                    <div className="flex space-x-2">
+                      <Button variant="outline" size="sm">
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => onDelete(item.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+              {data.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={columns.length + 1} className="text-center py-8 text-muted-foreground">
+                    No {entityName.toLowerCase()} found
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        )}
       </CardContent>
     </Card>
   );
@@ -152,72 +152,93 @@ const AdminPanel = () => {
 
           <TabsContent value="events">
             {renderCRUDTable(
-              mockEvents,
+              events,
               [
                 { key: 'title', label: 'Title' },
                 { key: 'date', label: 'Date' },
                 { key: 'img', label: 'Image' },
+                { key: 'description', label: 'Description' },
               ],
-              'Events'
+              'Events',
+              eventsLoading,
+              (id) => deleteEvent.mutate(id)
             )}
           </TabsContent>
 
           <TabsContent value="symbitech">
             {renderCRUDTable(
-              mockSymbitech,
+              sessions,
               [
                 { key: 'session', label: 'Session' },
                 { key: 'speaker', label: 'Speaker' },
                 { key: 'img', label: 'Image' },
+                { key: 'description', label: 'Description' },
               ],
-              'SymbiTech Sessions'
+              'SymbiTech Sessions',
+              sessionsLoading,
+              (id) => deleteSession.mutate(id)
             )}
           </TabsContent>
 
           <TabsContent value="media">
             {renderCRUDTable(
-              mockMediaPosts,
+              mediaPosts,
               [
                 { key: 'title', label: 'Title' },
                 { key: 'subtitle', label: 'Subtitle' },
+                { key: 'img', label: 'Image' },
+                { key: 'content', label: 'Content' },
               ],
-              'Media Posts'
+              'Media Posts',
+              mediaLoading,
+              (id) => deleteMediaPost.mutate(id)
             )}
           </TabsContent>
 
           <TabsContent value="blogs">
             {renderCRUDTable(
-              mockBlogs,
+              blogs,
               [
                 { key: 'quote', label: 'Quote' },
                 { key: 'author', label: 'Author' },
                 { key: 'link', label: 'Link' },
+                { key: 'content', label: 'Content' },
               ],
-              'Blogs & Articles'
+              'Blogs & Articles',
+              blogsLoading,
+              (id) => deleteBlog.mutate(id)
             )}
           </TabsContent>
 
           <TabsContent value="resources">
             {renderCRUDTable(
-              mockResources,
+              resources,
               [
                 { key: 'title', label: 'Title' },
                 { key: 'description', label: 'Description' },
+                { key: 'category', label: 'Category' },
                 { key: 'img', label: 'Image' },
                 { key: 'link', label: 'Link' },
               ],
-              'Resources'
+              'Resources',
+              resourcesLoading,
+              (id) => deleteResource.mutate(id)
             )}
           </TabsContent>
 
           <TabsContent value="projects">
             {renderCRUDTable(
-              mockProjects,
+              projects,
               [
                 { key: 'project', label: 'Project Name' },
+                { key: 'description', label: 'Description' },
+                { key: 'technologies', label: 'Technologies' },
                 { key: 'img', label: 'Image' },
+                { key: 'link', label: 'Link' },
               ],
-              'Projects'
+              'Projects',
+              projectsLoading,
+              (id) => deleteProject.mutate(id)
             )}
           </TabsContent>
         </Tabs>
