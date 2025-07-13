@@ -1,3 +1,4 @@
+
 import Footer from "../components/Footer";
 import AboutSection from "../components/sections/AboutSection";
 import EventsSection from "../components/sections/EventsSection";
@@ -6,15 +7,11 @@ import MediaSection from "../components/sections/MediaSection";
 import BlogsSection from "../components/sections/BlogsSection";
 import ResourcesSection from "../components/sections/ResourcesSection";
 import ProjectsSection from "../components/sections/ProjectsSection";
-import ThemeToggle from "../components/ThemeToggle";
 
 const Index = () => {
   return (
     <div className="min-h-screen bg-background text-foreground font-sans flex flex-col overflow-x-hidden transition-colors duration-300">
       
-      {/* Dark mode toggle */}
-      <ThemeToggle />
-
       {/* Shared background for header + About section */}
       <div className="bg-[url('https://plus.unsplash.com/premium_photo-1705440332779-359bc0421fc1?q=80&w=1112&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D')] 
                   dark:bg-[url('https://images.unsplash.com/photo-1673526759327-54f1f5b27322?q=80&w=1332&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D')] 

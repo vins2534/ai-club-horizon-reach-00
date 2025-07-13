@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 
 const ThemeToggle = () => {
@@ -18,12 +19,11 @@ const ThemeToggle = () => {
 
   return (
     <button
-  onClick={toggleDarkMode}
-  className="fixed top-4 right-4 z-50 px-4 py-2 rounded-md border bg-white dark:bg-zinc-800 text-black dark:text-white shadow transition-colors"
->
-  {darkMode ? "🌙 Dark" : "☀️ Light"}
-</button>
-
+      onClick={toggleDarkMode}
+      className="fixed top-4 right-4 z-50 px-4 py-2 rounded-md border bg-white dark:bg-zinc-800 text-black dark:text-white shadow transition-colors"
+    >
+      {darkMode ? "🌙 Dark" : "☀️ Light"}
+    </button>
   );
 };
 
