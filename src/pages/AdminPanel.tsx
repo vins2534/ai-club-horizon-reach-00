@@ -6,6 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Plus, Edit, Trash2, Calendar, Book, Image, Link, FolderOpen, Lightbulb } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { AddEditDialog } from '@/components/admin/AddEditDialog';
+import { useToast } from '@/hooks/use-toast';
 import { useEvents } from '@/hooks/useEvents';
 import { useSymbitech } from '@/hooks/useSymbitech';
 import { useMediaPosts } from '@/hooks/useMediaPosts';
@@ -15,12 +17,127 @@ import { useProjects } from '@/hooks/useProjects';
 
 const AdminPanel = () => {
   const { isAdminLoggedIn } = useAdmin();
-  const { events, isLoading: eventsLoading, deleteEvent } = useEvents();
-  const { sessions, isLoading: sessionsLoading, deleteSession } = useSymbitech();
-  const { mediaPosts, isLoading: mediaLoading, deleteMediaPost } = useMediaPosts();
-  const { blogs, isLoading: blogsLoading, deleteBlog } = useBlogs();
-  const { resources, isLoading: resourcesLoading, deleteResource } = useResources();
-  const { projects, isLoading: projectsLoading, deleteProject } = useProjects();
+  const { events, isLoading: eventsLoading, deleteEvent, createEvent, updateEvent } = useEvents();
+  const { sessions, isLoading: sessionsLoading, deleteSession, createSession, updateSession } = useSymbitech();
+  const { mediaPosts, isLoading: mediaLoading, deleteMediaPost, createMediaPost, updateMediaPost } = useMediaPosts();
+  const { blogs, isLoading: blogsLoading, deleteBlog, createBlog, updateBlog } = useBlogs();
+  const { resources, isLoading: resourcesLoading, deleteResource, createResource, updateResource } = useResources();
+  const { projects, isLoading: projectsLoading, deleteProject, createProject, updateProject } = useProjects();
+  const { toast } = useToast();
+
+  // Field configurations for each entity type
+  const entityConfigs = {
+    events: {
+      fields: [
+        { key: 'title', label: 'Title', type: 'text' as const },
+        { key: 'date', label: 'Date', type: 'date' as const },
+        { key: 'img', label: 'Image URL', type: 'url' as const },
+        { key: 'description', label: 'Description', type: 'textarea' as const },
+      ],
+      create: createEvent,
+      update: updateEvent,
+    },
+    sessions: {
+      fields: [
+        { key: 'session', label: 'Session Title', type: 'text' as const },
+        { key: 'speaker', label: 'Speaker', type: 'text' as const },
+        { key: 'img', label: 'Image URL', type: 'url' as const },
+        { key: 'description', label: 'Description', type: 'textarea' as const },
+      ],
+      create: createSession,
+      update: updateSession,
+    },
+    mediaPosts: {
+      fields: [
+        { key: 'title', label: 'Title', type: 'text' as const },
+        { key: 'subtitle', label: 'Subtitle', type: 'text' as const },
+        { key: 'img', label: 'Image URL', type: 'url' as const },
+        { key: 'content', label: 'Content', type: 'textarea' as const },
+      ],
+      create: createMediaPost,
+      update: updateMediaPost,
+    },
+    blogs: {
+      fields: [
+        { key: 'quote', label: 'Quote', type: 'text' as const },
+        { key: 'author', label: 'Author', type: 'text' as const },
+        { key: 'link', label: 'Link', type: 'url' as const },
+        { key: 'content', label: 'Content', type: 'textarea' as const },
+      ],
+      create: createBlog,
+      update: updateBlog,
+    },
+    resources: {
+      fields: [
+        { key: 'title', label: 'Title', type: 'text' as const },
+        { key: 'description', label: 'Description', type: 'textarea' as const },
+        { key: 'category', label: 'Category', type: 'text' as const },
+        { key: 'img', label: 'Image URL', type: 'url' as const },
+        { key: 'link', label: 'Link', type: 'url' as const },
+      ],
+      create: createResource,
+      update: updateResource,
+    },
+    projects: {
+      fields: [
+        { key: 'project', label: 'Project Name', type: 'text' as const },
+        { key: 'description', label: 'Description', type: 'textarea' as const },
+        { key: 'technologies', label: 'Technologies', type: 'text' as const },
+        { key: 'img', label: 'Image URL', type: 'url' as const },
+        { key: 'link', label: 'Link', type: 'url' as const },
+      ],
+      create: createProject,
+      update: updateProject,
+    },
+  };
+
+  const handleCreate = async (entityType: keyof typeof entityConfigs, data: any) => {
+    try {
+      await entityConfigs[entityType].create.mutateAsync(data);
+      toast({
+        title: "Success",
+        description: `${entityType} created successfully`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: `Failed to create ${entityType}`,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleUpdate = async (entityType: keyof typeof entityConfigs, data: any) => {
+    try {
+      await entityConfigs[entityType].update.mutateAsync(data);
+      toast({
+        title: "Success",
+        description: `${entityType} updated successfully`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: `Failed to update ${entityType}`,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDelete = async (entityType: string, id: string, deleteFn: any) => {
+    try {
+      await deleteFn.mutateAsync(id);
+      toast({
+        title: "Success",
+        description: `${entityType} deleted successfully`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: `Failed to delete ${entityType}`,
+        variant: "destructive",
+      });
+    }
+  };
 
   if (!isAdminLoggedIn) {
     return (
@@ -37,6 +154,7 @@ const AdminPanel = () => {
     data: any[],
     columns: { key: string; label: string }[],
     entityName: string,
+    entityType: keyof typeof entityConfigs,
     isLoading: boolean,
     onDelete: (id: string) => void
   ) => (
@@ -47,10 +165,12 @@ const AdminPanel = () => {
             <CardTitle>Manage {entityName}</CardTitle>
             <CardDescription>Create, read, update, and delete {entityName.toLowerCase()}</CardDescription>
           </div>
-          <Button>
-            <Plus className="mr-2 h-4 w-4" />
-            Add New
-          </Button>
+          <AddEditDialog
+            mode="add"
+            entityType={entityName}
+            fields={entityConfigs[entityType].fields}
+            onSave={(data) => handleCreate(entityType, data)}
+          />
         </div>
       </CardHeader>
       <CardContent>
@@ -86,13 +206,17 @@ const AdminPanel = () => {
                   ))}
                   <TableCell>
                     <div className="flex space-x-2">
-                      <Button variant="outline" size="sm">
-                        <Edit className="h-4 w-4" />
-                      </Button>
+                      <AddEditDialog
+                        mode="edit"
+                        entityType={entityName}
+                        item={item}
+                        fields={entityConfigs[entityType].fields}
+                        onSave={(data) => handleUpdate(entityType, { ...data, id: item.id })}
+                      />
                       <Button 
                         variant="outline" 
                         size="sm"
-                        onClick={() => onDelete(item.id)}
+                        onClick={() => handleDelete(entityName, item.id, { mutateAsync: onDelete })}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -160,6 +284,7 @@ const AdminPanel = () => {
                 { key: 'description', label: 'Description' },
               ],
               'Events',
+              'events',
               eventsLoading,
               (id) => deleteEvent.mutate(id)
             )}
@@ -175,6 +300,7 @@ const AdminPanel = () => {
                 { key: 'description', label: 'Description' },
               ],
               'SymbiTech Sessions',
+              'sessions',
               sessionsLoading,
               (id) => deleteSession.mutate(id)
             )}
@@ -190,6 +316,7 @@ const AdminPanel = () => {
                 { key: 'content', label: 'Content' },
               ],
               'Media Posts',
+              'mediaPosts',
               mediaLoading,
               (id) => deleteMediaPost.mutate(id)
             )}
@@ -205,6 +332,7 @@ const AdminPanel = () => {
                 { key: 'content', label: 'Content' },
               ],
               'Blogs & Articles',
+              'blogs',
               blogsLoading,
               (id) => deleteBlog.mutate(id)
             )}
@@ -221,6 +349,7 @@ const AdminPanel = () => {
                 { key: 'link', label: 'Link' },
               ],
               'Resources',
+              'resources',
               resourcesLoading,
               (id) => deleteResource.mutate(id)
             )}
@@ -237,6 +366,7 @@ const AdminPanel = () => {
                 { key: 'link', label: 'Link' },
               ],
               'Projects',
+              'projects',
               projectsLoading,
               (id) => deleteProject.mutate(id)
             )}
